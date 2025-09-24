@@ -21,7 +21,8 @@ boards: struct {
 pub fn init(dep: *std.Build.Dependency) Self {
     const b = dep.builder;
 
-    const atpack = b.dependency("atpack", .{});
+    const atmega_pack = b.dependency("atmega_pack", .{});
+    const attiny_pack = b.dependency("attiny_pack", .{});
 
     const avr5_target: std.Target.Query = .{
         .cpu_arch = .avr,
@@ -38,7 +39,7 @@ pub fn init(dep: *std.Build.Dependency) Self {
             .name = "ATmega328P",
             .url = "https://www.microchip.com/en-us/product/atmega328p",
             .register_definition = .{
-                .atdf = atpack.path("atdf/ATmega328P.atdf"),
+                .atdf = atmega_pack.path("atdf/ATmega328P.atdf"),
             },
             .memory_regions = &.{
                 .{ .tag = .flash, .offset = 0x000000, .length = 32 * 1024, .access = .rx },
@@ -58,7 +59,7 @@ pub fn init(dep: *std.Build.Dependency) Self {
             .name = "ATmega32U4",
             .url = "https://www.microchip.com/en-us/product/ATmega32U4",
             .register_definition = .{
-                .atdf = atpack.path("atdf/ATmega32U4.atdf"),
+                .atdf = atmega_pack.path("atdf/ATmega32U4.atdf"),
             },
             .memory_regions = &.{
                 .{ .tag = .flash, .offset = 0x000000, .length = 32 * 1024, .access = .rx },
@@ -70,10 +71,31 @@ pub fn init(dep: *std.Build.Dependency) Self {
         },
     };
 
+    const chip_attiny461: microzig.Target = .{
+        .dep = dep,
+        .preferred_binary_format = .hex,
+        .zig_target = avr5_target,
+        .chip = .{
+            .name = "ATtiny461",
+            .url = "https://www.microchip.com/en-us/product/ATtiny461",
+            .register_definition = .{
+                .atdf = atmega_pack.path("atdf/ATtiny461.atdf"),
+            },
+            .memory_regions = &.{
+                .{ .tag = .flash, .offset = 0x000000, .length = 4 * 1024, .access = .rx },
+                .{ .tag = .ram, .offset = 0x1060, .length = 256, .access = .rw },
+            },
+        },
+        .hal = .{
+            .root_source_file = b.path("src/hals/ATtiny461.zig"),
+        },
+    };
+
     return .{
         .chips = .{
             .atmega328p = chip_atmega328p.derive(.{}),
             .atmega32u4 = chip_atmega32u4.derive(.{}),
+            .attiny461 = chip_attiny461.derive(.{}),
         },
         .boards = .{
             .arduino = .{
